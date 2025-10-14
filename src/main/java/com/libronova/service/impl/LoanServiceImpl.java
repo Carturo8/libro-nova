@@ -3,13 +3,16 @@ package com.libronova.service.impl;
 import com.libronova.dao.BookDao;
 import com.libronova.dao.LoanDao;
 import com.libronova.dao.MemberDao;
+import com.libronova.dao.UserDao;
 import com.libronova.dao.impl.BookDaoImpl;
 import com.libronova.dao.impl.LoanDaoImpl;
 import com.libronova.dao.impl.MemberDaoImpl;
+import com.libronova.dao.impl.UserDaoImpl;
 import com.libronova.errors.*;
 import com.libronova.model.Book;
 import com.libronova.model.Loan;
 import com.libronova.model.Member;
+import com.libronova.model.User;
 import com.libronova.service.LoanService;
 
 import java.math.BigDecimal;
@@ -22,11 +25,13 @@ public class LoanServiceImpl implements LoanService {
     private final LoanDao loanDao;
     private final BookDao bookDao;
     private final MemberDao memberDao;
+    private final UserDao userDao;
 
     public LoanServiceImpl() {
         this.loanDao = new LoanDaoImpl();
         this.bookDao = new BookDaoImpl();
         this.memberDao = new MemberDaoImpl();
+        this.userDao = new UserDaoImpl(); // INICIALIZADO
     }
 
     @Override
@@ -43,8 +48,13 @@ public class LoanServiceImpl implements LoanService {
                 throw new NotFoundException("Member", memberId);
             }
 
+            User user = userDao.findById(member.getUserId());
+            if (user == null) {
+                throw new ServiceException("Associated user not found for member ID: " + memberId);
+            }
+
             if (!"ACTIVE".equalsIgnoreCase(member.getStatus())) {
-                throw new InactiveMemberException(member.getFullName(), member.getStatus());
+                throw new InactiveMemberException(user.getFullName(), member.getStatus()); // CORREGIDO
             }
 
             if (book.getAvailableCopies() <= 0) {
@@ -53,7 +63,7 @@ public class LoanServiceImpl implements LoanService {
 
             if (hasOverdueLoans(memberId)) {
                 List<Loan> overdueLoans = getOverdueLoansByMember(memberId);
-                throw new OverdueLoanException(member.getFullName(), overdueLoans.size());
+                throw new OverdueLoanException(user.getFullName(), overdueLoans.size()); // CORREGIDO
             }
 
             if (loanDays == null || loanDays <= 0) {

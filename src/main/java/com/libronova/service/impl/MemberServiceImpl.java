@@ -1,71 +1,39 @@
 package com.libronova.service.impl;
 
 import com.libronova.dao.MemberDao;
+import com.libronova.dao.UserDao;
 import com.libronova.dao.impl.MemberDaoImpl;
-import com.libronova.errors.*;
+import com.libronova.dao.impl.UserDaoImpl;
+import com.libronova.errors.BadRequestException;
+import com.libronova.errors.DataAccessException;
+import com.libronova.errors.NotFoundException;
+import com.libronova.errors.ServiceException;
 import com.libronova.model.Member;
+import com.libronova.model.User;
 import com.libronova.service.MemberService;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MemberServiceImpl implements MemberService {
 
     private final MemberDao memberDao;
+    private final UserDao userDao;
 
     public MemberServiceImpl() {
         this.memberDao = new MemberDaoImpl();
-    }
-
-    @Override
-    public Member createMember(Member member) {
-        try {
-            // Validate required fields
-            validateMemberData(member);
-
-            // Validate email uniqueness
-            Member existingMemberByEmail = memberDao.findByEmail(member.getEmail());
-            if (existingMemberByEmail != null) {
-                throw new ConflictException("Member", "email", member.getEmail());
-            }
-
-            // Generate membership number if isn't provided
-            if (member.getMembershipNumber() == null || member.getMembershipNumber().trim().isEmpty()) {
-                member.setMembershipNumber(generateMembershipNumber());
-            }
-
-            // Validate membership number uniqueness
-            Member existingMemberByNumber = memberDao.findByMembershipNumber(member.getMembershipNumber());
-            if (existingMemberByNumber != null) {
-                throw new ConflictException("Member", "membership number", member.getMembershipNumber());
-            }
-
-            // Set default values
-            if (member.getStatus() == null || member.getStatus().trim().isEmpty()) {
-                member.setStatus("ACTIVE");
-            }
-
-            if (member.getRegistrationDate() == null) {
-                member.setRegistrationDate(LocalDate.now());
-            }
-
-            return memberDao.create(member);
-
-        } catch (DataAccessException e) {
-            throw new ServiceException("Error creating member", e);
-        }
+        this.userDao = new UserDaoImpl();
     }
 
     @Override
     public Member getMemberById(Integer id) {
-
         try {
             Member member = memberDao.findById(id);
             if (member == null) {
                 throw new NotFoundException("Member", id);
             }
-
             return member;
 
         } catch (DataAccessException e) {
@@ -75,17 +43,14 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     public Member getMemberByMembershipNumber(String membershipNumber) {
-
         try {
             if (membershipNumber == null || membershipNumber.trim().isEmpty()) {
                 throw new BadRequestException("Membership number cannot be empty");
             }
-
             Member member = memberDao.findByMembershipNumber(membershipNumber);
             if (member == null) {
                 throw new NotFoundException("Member with membership number " + membershipNumber + " not found");
             }
-
             return member;
 
         } catch (DataAccessException e) {
@@ -94,10 +59,9 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
-    public List<Member> getAllMembers() {
-
+    public List<User> getAllMembers() {
         try {
-            return memberDao.findAll();
+            return userDao.findAllByRole("MEMBER");
 
         } catch (DataAccessException e) {
             throw new ServiceException("Error retrieving all members", e);
@@ -105,10 +69,12 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
-    public List<Member> getAllActiveMembers() {
-
+    public List<User> getAllActiveMembers() {
         try {
-            return memberDao.findAllActive();
+            List<User> allMembers = userDao.findAllByRole("MEMBER");
+            return allMembers.stream()
+                    .filter(User::isActive)
+                    .collect(Collectors.toList());
 
         } catch (DataAccessException e) {
             throw new ServiceException("Error retrieving active members", e);
@@ -116,45 +82,31 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
-    public Member updateMember(Member member) {
-
+    public Member updateMemberDetails(Member member) {
         try {
-            // Validate member exists
             Member existingMember = memberDao.findById(member.getId());
             if (existingMember == null) {
                 throw new NotFoundException("Member", member.getId());
             }
 
-            // Validate required fields
-            validateMemberData(member);
+            // Only update fields that are part of the Member entity
+            existingMember.setPhone(member.getPhone());
+            existingMember.setStatus(member.getStatus());
 
-            // Validate email uniqueness (excluding current member)
-            Member memberWithSameEmail = memberDao.findByEmail(member.getEmail());
-            if (memberWithSameEmail != null && !memberWithSameEmail.getId().equals(member.getId())) {
-                throw new ConflictException("Member", "email", member.getEmail());
-            }
-
-            // Validate membership number uniqueness (excluding current member)
-            Member memberWithSameNumber = memberDao.findByMembershipNumber(member.getMembershipNumber());
-            if (memberWithSameNumber != null && !memberWithSameNumber.getId().equals(member.getId())) {
-                throw new ConflictException("Member", "membership number", member.getMembershipNumber());
-            }
-
-            boolean updated = memberDao.update(member);
+            boolean updated = memberDao.update(existingMember);
             if (!updated) {
-                throw new ServiceException("Failed to update member");
+                throw new ServiceException("Failed to update member details");
             }
 
             return memberDao.findById(member.getId());
 
         } catch (DataAccessException e) {
-            throw new ServiceException("Error updating member", e);
+            throw new ServiceException("Error updating member details", e);
         }
     }
 
     @Override
-    public void deleteMember(Integer id) {
-
+    public void deleteMember(Integer id) { // <-- IMPLEMENTACIÓN AÑADIDA
         try {
             Member member = memberDao.findById(id);
             if (member == null) {
@@ -173,13 +125,11 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     public boolean isActive(Integer memberId) {
-
         try {
             Member member = memberDao.findById(memberId);
             if (member == null) {
                 throw new NotFoundException("Member", memberId);
             }
-
             return "ACTIVE".equalsIgnoreCase(member.getStatus());
 
         } catch (DataAccessException e) {
@@ -193,20 +143,19 @@ public class MemberServiceImpl implements MemberService {
         String year = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy"));
 
         try {
-            // Get all members and find the highest number
             List<Member> allMembers = memberDao.findAll();
             int maxNumber = 0;
 
-            for (Member member : allMembers) {
-                String membershipNumber = member.getMembershipNumber();
-                if (membershipNumber != null && membershipNumber.startsWith(prefix + year)) {
-                    String numberPart = membershipNumber.substring((prefix + year + "-").length());
+            for (Member m : allMembers) {
+                String num = m.getMembershipNumber();
+                if (num != null && num.startsWith(prefix + year)) {
                     try {
+                        String numberPart = num.substring((prefix + year + "-").length());
                         int number = Integer.parseInt(numberPart);
                         if (number > maxNumber) {
                             maxNumber = number;
                         }
-                    } catch (NumberFormatException e) {
+                    } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
                         // Ignore invalid formats
                     }
                 }
@@ -217,28 +166,6 @@ public class MemberServiceImpl implements MemberService {
 
         } catch (DataAccessException e) {
             throw new ServiceException("Error generating membership number", e);
-        }
-    }
-
-    private void validateMemberData(Member member) {
-        if (member.getFullName() == null || member.getFullName().trim().isEmpty()) {
-            throw new BadRequestException("Full name", "cannot be empty");
-        }
-
-        if (member.getEmail() == null || member.getEmail().trim().isEmpty()) {
-            throw new BadRequestException("Email", "cannot be empty");
-        }
-
-        // Basic email validation
-        if (!member.getEmail().contains("@")) {
-            throw new BadRequestException("Email", "invalid format");
-        }
-
-        if (member.getStatus() != null && !member.getStatus().trim().isEmpty()) {
-            String status = member.getStatus().toUpperCase();
-            if (!status.equals("ACTIVE") && !status.equals("INACTIVE")) {
-                throw new BadRequestException("Status", "must be ACTIVE or INACTIVE");
-            }
         }
     }
 }
