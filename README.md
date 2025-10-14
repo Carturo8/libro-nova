@@ -69,6 +69,20 @@ src/
 - **`model`**: Plain Old Java Objects (POJOs) that represent the application's entities.
 - **`config`**: Manages the database connection details and provides connections to the DAOs.
 
+## 📊 Diagrams
+
+### Class Diagram
+
+This diagram shows the main classes of the project and their relationships, reflecting the layered architecture.
+
+![Class Diagram](assets/Class_Diagram.png)
+
+### Use Case Diagram
+
+This diagram illustrates the interactions between the actors (Librarian, Member) and the system's functionalities.
+
+![Use Case Diagram](assets/Use_Case_Diagram.png)
+
 ## 🚀 Getting Started
 
 Follow these instructions to get a copy of the project up and running on your local machine.
