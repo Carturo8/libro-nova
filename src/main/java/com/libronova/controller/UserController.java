@@ -1,6 +1,7 @@
 package com.libronova.controller;
 
 import com.libronova.errors.*;
+import com.libronova.model.Member;
 import com.libronova.model.User;
 import com.libronova.service.UserService;
 import com.libronova.service.impl.UserServiceImpl;
@@ -20,34 +21,41 @@ public class UserController {
         this.userService = new UserServiceImpl();
     }
 
-    public User createUser(User user) {
+    public User registerMember(User user, Member memberDetails) {
         try {
-            logger.info("Attempting to create a new user with username: {}", user.getUsername());
-            User createdUser = userService.createUser(user);
-            logger.info("User '{}' created successfully with ID {}.", createdUser.getUsername(), createdUser.getId());
+            logger.info("Attempting to register new member with username: {}", user.getUsername());
+            User createdUser = userService.registerMember(user, memberDetails);
+            logger.info("Member '{}' registered successfully with ID {}.", createdUser.getFullName(), createdUser.getId());
             return createdUser;
 
-        } catch (ConflictException | BadRequestException e) {
-            logger.warn("User creation failed: {}", e.getMessage());
-            return null;
-        } catch (ServiceException e) {
-            logger.error("A service error occurred during user creation.", e);
+        } catch (ConflictException | BadRequestException | ServiceException e) {
+            logger.warn("Member registration failed: {}", e.getMessage());
             return null;
         }
     }
 
-    public User login(String username, String password) {
+    public User createStaff(User user) {
         try {
-            logger.info("Login attempt for user: {}", username);
-            User user = userService.login(username, password);
-            logger.info("User '{}' logged in successfully.", username);
+            logger.info("Attempting to create new staff user with username: {}", user.getUsername());
+            User createdUser = userService.createStaff(user);
+            logger.info("Staff user '{}' (Role: {}) created successfully with ID {}.", createdUser.getFullName(), createdUser.getRole(), createdUser.getId());
+            return createdUser;
+
+        } catch (ConflictException | BadRequestException | ServiceException e) {
+            logger.warn("Staff user creation failed: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    public User login(String usernameOrEmail, String password) {
+        try {
+            logger.info("Login attempt for user: {}", usernameOrEmail);
+            User user = userService.login(usernameOrEmail, password);
+            logger.info("User '{}' logged in successfully.", usernameOrEmail);
             return user;
 
-        } catch (UnauthorizedException | BadRequestException e) {
-            logger.warn("Login failed for user '{}': {}", username, e.getMessage());
-            return null;
-        } catch (ServiceException e) {
-            logger.error("A service error occurred during login for user '{}'", username, e);
+        } catch (UnauthorizedException | BadRequestException | ServiceException e) {
+            logger.warn("Login failed for user '{}': {}", usernameOrEmail, e.getMessage());
             return null;
         }
     }
@@ -57,11 +65,8 @@ public class UserController {
             logger.debug("Attempting to find user by ID: {}", id);
             return userService.getUserById(id);
 
-        } catch (NotFoundException e) {
+        } catch (NotFoundException | ServiceException e) {
             logger.warn("Could not find user with ID {}: {}", id, e.getMessage());
-            return null;
-        } catch (ServiceException e) {
-            logger.error("A service error occurred while fetching user with ID {}", id, e);
             return null;
         }
     }
@@ -73,6 +78,17 @@ public class UserController {
 
         } catch (ServiceException e) {
             logger.error("A service error occurred while fetching all users.", e);
+            return Collections.emptyList();
+        }
+    }
+
+    public List<User> getUsersByRole(String role) {
+        try {
+            logger.debug("Attempting to fetch users by role: {}", role);
+            return userService.getUsersByRole(role);
+
+        } catch (BadRequestException | ServiceException e) {
+            logger.warn("Failed to fetch users by role '{}': {}", role, e.getMessage());
             return Collections.emptyList();
         }
     }
@@ -95,11 +111,8 @@ public class UserController {
             logger.info("User with ID {} updated successfully.", user.getId());
             return updatedUser;
 
-        } catch (NotFoundException | ConflictException | BadRequestException e) {
+        } catch (NotFoundException | ConflictException | BadRequestException | ServiceException e) {
             logger.warn("User update failed for user ID {}: {}", user.getId(), e.getMessage());
-            return null;
-        } catch (ServiceException e) {
-            logger.error("A service error occurred while updating user with ID {}", user.getId(), e);
             return null;
         }
     }
@@ -108,14 +121,11 @@ public class UserController {
         try {
             logger.info("Attempting to delete user with ID: {}", id);
             userService.deleteUser(id);
-            logger.info("User with ID {} marked as inactive successfully.", id);
+            logger.info("User with ID {} deleted successfully.", id);
             return true;
 
-        } catch (NotFoundException e) {
+        } catch (NotFoundException | ServiceException e) {
             logger.warn("Could not delete user with ID {}: {}", id, e.getMessage());
-            return false;
-        } catch (ServiceException e) {
-            logger.error("A service error occurred while deleting user with ID {}", id, e);
             return false;
         }
     }

@@ -26,11 +26,8 @@ public class BookController {
             logger.info("Book '{}' created successfully with ID {}.", createdBook.getTitle(), createdBook.getId());
             return createdBook;
 
-        } catch (ConflictException | BadRequestException e) {
+        } catch (ConflictException | BadRequestException | ServiceException e) {
             logger.warn("Book creation failed: {}", e.getMessage());
-            return null;
-        } catch (ServiceException e) {
-            logger.error("A service error occurred during book creation.", e);
             return null;
         }
     }
@@ -40,11 +37,8 @@ public class BookController {
             logger.debug("Attempting to find book by ID: {}", id);
             return bookService.getBookById(id);
 
-        } catch (NotFoundException e) {
+        } catch (NotFoundException | ServiceException e) {
             logger.warn("Could not find book with ID {}: {}", id, e.getMessage());
-            return null;
-        } catch (ServiceException e) {
-            logger.error("A service error occurred while fetching book with ID {}.", id, e);
             return null;
         }
     }
@@ -54,11 +48,8 @@ public class BookController {
             logger.debug("Attempting to find book by ISBN: {}", isbn);
             return bookService.getBookByIsbn(isbn);
 
-        } catch (NotFoundException | BadRequestException e) {
+        } catch (NotFoundException | BadRequestException | ServiceException e) {
             logger.warn("Could not find book with ISBN {}: {}", isbn, e.getMessage());
-            return null;
-        } catch (ServiceException e) {
-            logger.error("A service error occurred while fetching book with ISBN {}.", isbn, e);
             return null;
         }
     }
@@ -74,16 +65,23 @@ public class BookController {
         }
     }
 
+    public List<Book> getAllActiveBooks() {
+        try {
+            logger.debug("Attempting to fetch all active books.");
+            return bookService.getAllActiveBooks();
+        } catch (ServiceException e) {
+            logger.error("A service error occurred while fetching all active books.", e);
+            return Collections.emptyList();
+        }
+    }
+
     public List<Book> searchBooksByTitle(String title) {
         try {
             logger.debug("Attempting to search books by title: '{}'", title);
             return bookService.searchBooksByTitle(title);
 
-        } catch (BadRequestException e) {
+        } catch (BadRequestException | ServiceException e) {
             logger.warn("Book search failed: {}", e.getMessage());
-            return Collections.emptyList();
-        } catch (ServiceException e) {
-            logger.error("A service error occurred while searching for books.", e);
             return Collections.emptyList();
         }
     }
@@ -95,11 +93,8 @@ public class BookController {
             logger.info("Book with ID {} updated successfully.", book.getId());
             return updatedBook;
 
-        } catch (NotFoundException | ConflictException | BadRequestException e) {
+        } catch (NotFoundException | ConflictException | BadRequestException | ServiceException e) {
             logger.warn("Book update failed for book ID {}: {}", book.getId(), e.getMessage());
-            return null;
-        } catch (ServiceException e) {
-            logger.error("A service error occurred while updating book with ID {}.", book.getId(), e);
             return null;
         }
     }
@@ -111,11 +106,8 @@ public class BookController {
             logger.info("Book with ID {} marked as inactive successfully.", id);
             return true;
 
-        } catch (NotFoundException e) {
+        } catch (NotFoundException | ServiceException e) {
             logger.warn("Could not delete book with ID {}: {}", id, e.getMessage());
-            return false;
-        } catch (ServiceException e) {
-            logger.error("A service error occurred while deleting book with ID {}.", id, e);
             return false;
         }
     }
