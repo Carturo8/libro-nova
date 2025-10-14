@@ -20,7 +20,7 @@ public class MainView {
 
         String[] options = optionsList.toArray(new String[0]);
         int choice = -1;
-        int logoutIndex = options.length - 1;
+        int logoutIndex = options.length - 1; // CORREGIDO: Usar .length en lugar de .size()
 
         while (choice != logoutIndex) {
             String menuTitle = "LibroNova Main Menu | Welcome, " + currentUser.getFullName();

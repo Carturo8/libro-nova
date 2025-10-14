@@ -61,6 +61,22 @@ public class BookView {
         }
     }
 
+    public void showAvailableBooksForMember() {
+        List<Book> books = bookController.getAllActiveBooks();
+        if (books.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "No active books found.", "Available Books", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder("Available Books:\n\n");
+        for (Book book : books) {
+            sb.append(String.format("ID: %d, Title: %s, Author: %s, ISBN: %s, Available: %d\n",
+                    book.getId(), book.getTitle(), book.getAuthor(), book.getIsbn(),
+                    book.getAvailableCopies()));
+        }
+        JOptionPane.showMessageDialog(null, sb.toString(), "Available Books", JOptionPane.PLAIN_MESSAGE);
+    }
+
     private void listAllBooks() {
         List<Book> books = bookController.getAllBooks();
         if (books.isEmpty()) {
@@ -90,6 +106,7 @@ public class BookView {
                         book.getId(), book.getTitle(), book.getAuthor(), book.getIsbn(), book.getPublicationYear(),
                         book.getGenre(), book.getAvailableCopies(), book.getTotalCopies(), book.isActive());
                 JOptionPane.showMessageDialog(null, bookInfo, "Book Found", JOptionPane.INFORMATION_MESSAGE);
+
             } else {
                 JOptionPane.showMessageDialog(null, "Book with ID " + id + " not found.", "Error", JOptionPane.ERROR_MESSAGE);
             }

@@ -1,6 +1,7 @@
 package com.libronova.view;
 
 import com.libronova.controller.UserController;
+import com.libronova.model.Member;
 import com.libronova.model.User;
 
 import javax.swing.JOptionPane;
@@ -15,7 +16,7 @@ public class AuthView {
     }
 
     public void showAuthMenu() {
-        String[] options = {"Login", "Register", "Exit"};
+        String[] options = {"Login", "Register Member", "Exit"};
         int choice = -1;
 
         while (choice != 2) {
@@ -35,7 +36,7 @@ public class AuthView {
                     showLoginDialog();
                     break;
                 case 1:
-                    showRegisterDialog();
+                    showRegisterMemberDialog();
                     break;
                 case 2:
                     JOptionPane.showMessageDialog(null, "Goodbye!");
@@ -48,8 +49,8 @@ public class AuthView {
     }
 
     private void showLoginDialog() {
-        String username = JOptionPane.showInputDialog(null, "Enter your username:", "Login", JOptionPane.PLAIN_MESSAGE);
-        if (username == null) return;
+        String usernameOrEmail = JOptionPane.showInputDialog(null, "Enter your username or email:", "Login", JOptionPane.PLAIN_MESSAGE);
+        if (usernameOrEmail == null) return;
 
         JPasswordField passwordField = new JPasswordField();
         int ok = JOptionPane.showConfirmDialog(null, passwordField, "Enter your password:", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
@@ -57,7 +58,7 @@ public class AuthView {
 
         String password = new String(passwordField.getPassword());
 
-        User authenticatedUser = userController.login(username, password);
+        User authenticatedUser = userController.login(usernameOrEmail, password);
 
         if (authenticatedUser != null) {
             JOptionPane.showMessageDialog(null, "Welcome, " + authenticatedUser.getFullName() + "!", "Login Successful", JOptionPane.INFORMATION_MESSAGE);
@@ -68,8 +69,8 @@ public class AuthView {
         }
     }
 
-    private void showRegisterDialog() {
-        String username = JOptionPane.showInputDialog(null, "Enter a new username:", "Register", JOptionPane.PLAIN_MESSAGE);
+    private void showRegisterMemberDialog() {
+        String username = JOptionPane.showInputDialog(null, "Enter a new username:", "Register Member", JOptionPane.PLAIN_MESSAGE);
         if (username == null) return;
 
         JPasswordField passwordField = new JPasswordField();
@@ -77,12 +78,13 @@ public class AuthView {
         if (ok != JOptionPane.OK_OPTION) return;
         String password = new String(passwordField.getPassword());
 
-
-        String fullName = JOptionPane.showInputDialog(null, "Enter your full name:", "Register", JOptionPane.PLAIN_MESSAGE);
+        String fullName = JOptionPane.showInputDialog(null, "Enter your full name:", "Register Member", JOptionPane.PLAIN_MESSAGE);
         if (fullName == null) return;
 
-        String email = JOptionPane.showInputDialog(null, "Enter your email:", "Register", JOptionPane.PLAIN_MESSAGE);
+        String email = JOptionPane.showInputDialog(null, "Enter your email:", "Register Member", JOptionPane.PLAIN_MESSAGE);
         if (email == null) return;
+
+        String phone = JOptionPane.showInputDialog(null, "Enter your phone number (optional):");
 
         User newUser = new User();
         newUser.setUsername(username);
@@ -90,10 +92,13 @@ public class AuthView {
         newUser.setFullName(fullName);
         newUser.setEmail(email);
 
-        User createdUser = userController.createUser(newUser);
+        Member newMemberDetails = new Member();
+        newMemberDetails.setPhone(phone);
+
+        User createdUser = userController.registerMember(newUser, newMemberDetails);
 
         if (createdUser != null) {
-            JOptionPane.showMessageDialog(null, "Registration successful! You can now log in.", "Success", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Registration successful! You can now log in.\nYour Membership Number: " + createdUser.getMember().getMembershipNumber(), "Success", JOptionPane.INFORMATION_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(null, "Registration failed. The username or email might already exist, or your data is invalid.", "Registration Error", JOptionPane.ERROR_MESSAGE);
         }
