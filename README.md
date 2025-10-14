@@ -2,6 +2,16 @@
 
 LibroNova is a comprehensive, console-based library management system built with Java. It provides essential functionalities for managing books, members, and loans within a library environment. The application is designed with a layered architecture for clarity, maintainability, and separation of concerns.
 
+## 📸 Preview
+
+A glimpse of the LibroNova console application in action.
+
+![LibroNova Main Menu](assets/image_1.png)
+*Main application menu*
+
+![LibroNova Book Management](assets/image_2.png)
+*Book management and search functionality*
+
 ## ✨ Features
 
 - **Book Management**: Full CRUD (Create, Read, Update, Delete) operations for books.
