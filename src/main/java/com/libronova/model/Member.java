@@ -5,9 +5,8 @@ import java.time.LocalDateTime;
 
 public class Member {
     private Integer id;
+    private Integer userId;
     private String membershipNumber;
-    private String fullName;
-    private String email;
     private String phone;
     private String status;
     private LocalDate registrationDate;
@@ -17,13 +16,11 @@ public class Member {
     public Member() {
     }
 
-    public Member(Integer id, String membershipNumber, String fullName, String email,
-                  String phone, String status, LocalDate registrationDate,
-                  LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public Member(Integer id, Integer userId, String membershipNumber, String phone, String status,
+                  LocalDate registrationDate, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
+        this.userId = userId;
         this.membershipNumber = membershipNumber;
-        this.fullName = fullName;
-        this.email = email;
         this.phone = phone;
         this.status = status;
         this.registrationDate = registrationDate;
@@ -39,28 +36,20 @@ public class Member {
         this.id = id;
     }
 
+    public Integer getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
+
     public String getMembershipNumber() {
         return membershipNumber;
     }
 
     public void setMembershipNumber(String membershipNumber) {
         this.membershipNumber = membershipNumber;
-    }
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     public String getPhone() {
@@ -107,9 +96,8 @@ public class Member {
     public String toString() {
         return "Member{" +
                 "id=" + id +
+                ", userId=" + userId +
                 ", membershipNumber='" + membershipNumber + '\'' +
-                ", fullName='" + fullName + '\'' +
-                ", email='" + email + '\'' +
                 ", phone='" + phone + '\'' +
                 ", status='" + status + '\'' +
                 ", registrationDate=" + registrationDate +

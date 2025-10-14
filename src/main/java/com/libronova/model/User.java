@@ -13,6 +13,9 @@ public class User {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // This field will hold member-specific data if the user's role is MEMBER.
+    private Member member;
+
     public User() {
     }
 
@@ -101,6 +104,14 @@ public class User {
         this.updatedAt = updatedAt;
     }
 
+    public Member getMember() {
+        return member;
+    }
+
+    public void setMember(Member member) {
+        this.member = member;
+    }
+
     @Override
     public String toString() {
         return "User{" +
@@ -110,7 +121,7 @@ public class User {
                 ", fullName='" + fullName + '\'' +
                 ", role='" + role + '\'' +
                 ", isActive=" + isActive +
-                ", createdAt=" + createdAt +
+                ", memberDetails=" + (member != null ? member.toString() : "N/A") +
                 '}';
     }
 }
