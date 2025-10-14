@@ -13,18 +13,26 @@ public class MemberDaoImpl implements MemberDao {
 
     @Override
     public Member create(Member member) throws DataAccessException {
-        String sql = "INSERT INTO members (membership_number, full_name, email, phone, " +
-                "status, registration_date) VALUES (?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            return create(member, conn);
 
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        } catch (SQLException e) {
+            throw new DataAccessException("Error getting connection for member creation: " + e.getMessage(), e);
+        }
+    }
 
-            stmt.setString(1, member.getMembershipNumber());
-            stmt.setString(2, member.getFullName());
-            stmt.setString(3, member.getEmail());
-            stmt.setString(4, member.getPhone());
-            stmt.setString(5, member.getStatus());
-            stmt.setDate(6, Date.valueOf(member.getRegistrationDate()));
+    @Override
+    public Member create(Member member, Connection conn) throws DataAccessException {
+        String sql = "INSERT INTO members (user_id, membership_number, phone, status, registration_date) " +
+                "VALUES (?, ?, ?, ?, ?)";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            stmt.setInt(1, member.getUserId());
+            stmt.setString(2, member.getMembershipNumber());
+            stmt.setString(3, member.getPhone());
+            stmt.setString(4, member.getStatus());
+            stmt.setDate(5, Date.valueOf(member.getRegistrationDate()));
 
             int affectedRows = stmt.executeUpdate();
 
@@ -68,6 +76,27 @@ public class MemberDaoImpl implements MemberDao {
     }
 
     @Override
+    public Member findByUserId(Integer userId) throws DataAccessException {
+        String sql = "SELECT * FROM members WHERE user_id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToMember(rs);
+                }
+                return null;
+            }
+
+        } catch (SQLException e) {
+            throw new DataAccessException("Error finding member by user ID: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
     public Member findByMembershipNumber(String membershipNumber) throws DataAccessException {
         String sql = "SELECT * FROM members WHERE membership_number = ?";
 
@@ -89,29 +118,8 @@ public class MemberDaoImpl implements MemberDao {
     }
 
     @Override
-    public Member findByEmail(String email) throws DataAccessException {
-        String sql = "SELECT * FROM members WHERE email = ?";
-
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, email);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return mapResultSetToMember(rs);
-                }
-                return null;
-            }
-
-        } catch (SQLException e) {
-            throw new DataAccessException("Error finding member by email: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
     public List<Member> findAll() throws DataAccessException {
-        String sql = "SELECT * FROM members ORDER BY full_name";
+        String sql = "SELECT * FROM members ORDER BY registration_date DESC";
         List<Member> members = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -131,7 +139,7 @@ public class MemberDaoImpl implements MemberDao {
 
     @Override
     public List<Member> findAllActive() throws DataAccessException {
-        String sql = "SELECT * FROM members WHERE status = 'ACTIVE' ORDER BY full_name";
+        String sql = "SELECT * FROM members WHERE status = 'ACTIVE' ORDER BY registration_date DESC";
         List<Member> members = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getConnection();
@@ -151,19 +159,16 @@ public class MemberDaoImpl implements MemberDao {
 
     @Override
     public boolean update(Member member) throws DataAccessException {
-        String sql = "UPDATE members SET membership_number = ?, full_name = ?, email = ?, " +
-                "phone = ?, status = ?, registration_date = ? WHERE id = ?";
+        String sql = "UPDATE members SET membership_number = ?, phone = ?, status = ?, registration_date = ? WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, member.getMembershipNumber());
-            stmt.setString(2, member.getFullName());
-            stmt.setString(3, member.getEmail());
-            stmt.setString(4, member.getPhone());
-            stmt.setString(5, member.getStatus());
-            stmt.setDate(6, Date.valueOf(member.getRegistrationDate()));
-            stmt.setInt(7, member.getId());
+            stmt.setString(2, member.getPhone());
+            stmt.setString(3, member.getStatus());
+            stmt.setDate(4, Date.valueOf(member.getRegistrationDate()));
+            stmt.setInt(5, member.getId());
 
             int affectedRows = stmt.executeUpdate();
             return affectedRows > 0;
@@ -175,7 +180,7 @@ public class MemberDaoImpl implements MemberDao {
 
     @Override
     public boolean delete(Integer id) throws DataAccessException {
-        String sql = "UPDATE members SET status = 'INACTIVE' WHERE id = ?";
+        String sql = "DELETE FROM members WHERE id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -190,13 +195,11 @@ public class MemberDaoImpl implements MemberDao {
         }
     }
 
-    // Helper method to map ResultSet to Member object.
     private Member mapResultSetToMember(ResultSet rs) throws SQLException {
         Member member = new Member();
         member.setId(rs.getInt("id"));
+        member.setUserId(rs.getInt("user_id"));
         member.setMembershipNumber(rs.getString("membership_number"));
-        member.setFullName(rs.getString("full_name"));
-        member.setEmail(rs.getString("email"));
         member.setPhone(rs.getString("phone"));
         member.setStatus(rs.getString("status"));
 
