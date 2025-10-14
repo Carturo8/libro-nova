@@ -1,4 +1,4 @@
--- DROP TABLES IF THEY EXIST
+-- Drop tables in reverse order of dependency
 DROP TABLE IF EXISTS loans CASCADE;
 DROP TABLE IF EXISTS members CASCADE;
 DROP TABLE IF EXISTS books CASCADE;
@@ -12,24 +12,25 @@ CREATE TABLE users
     password   VARCHAR(255) NOT NULL,
     email      VARCHAR(100) NOT NULL UNIQUE,
     full_name  VARCHAR(100) NOT NULL,
-    role       VARCHAR(20)  NOT NULL DEFAULT 'ADMIN',
+    role       VARCHAR(20)  NOT NULL,
     is_active  BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT role_check CHECK (role IN ('ADMIN', 'LIBRARIAN', 'MEMBER'))
 );
 
 -- MEMBERS TABLE
 CREATE TABLE members
 (
     id                SERIAL PRIMARY KEY,
-    membership_number VARCHAR(20)  NOT NULL UNIQUE,
-    full_name         VARCHAR(100) NOT NULL,
-    email             VARCHAR(100) NOT NULL UNIQUE,
+    user_id           INTEGER     NOT NULL UNIQUE,
+    membership_number VARCHAR(20) NOT NULL UNIQUE,
     phone             VARCHAR(20),
-    status            VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE',
-    registration_date DATE         NOT NULL DEFAULT CURRENT_DATE,
-    created_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+    status            VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    registration_date DATE        NOT NULL DEFAULT CURRENT_DATE,
+    created_at        TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 
