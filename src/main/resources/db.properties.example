@@ -1,0 +1,10 @@
+# Database connection example settings
+
+# PostgreSQL (Supabase) credentials
+db.url=jdbc:postgresql://YOUR_DB_URL:6543/postgres?sslmode=require
+db.user=YOUR_DB_USER
+db.password=YOUR_DB_PASSWORD
+
+# Optional: connection pool or timeout settings
+db.maxConnections=10
+db.connectionTimeout=5000
