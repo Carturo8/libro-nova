@@ -136,10 +136,3 @@ Open the `DatabaseConfig.java` file and update the connection details to match y
     ```bash
     mvn exec:java -Dexec.mainClass="com.libronova.app.Main"
     ```
-
-### Coder Info
-
-- Carlos Arturo Rojas Bolaños
-- Clan Lovelace
-- caarojasbo@unal.edu.co
-- 1105793265
